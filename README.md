@@ -193,17 +193,6 @@ From the same directory as every other command (the one above the `nbg2ynab` clo
 python3 -m unittest discover -s nbg2ynab/tests
 ```
 
-## Follow-up work
-
-If downloading and converting a file every week gets old, NBG's PSD2 API could replace the CSV entirely. It would give you two things the export can't: pending transactions, which the XLSX leaves out completely, and no manual download step.
-
-The code is arranged with this in mind. `sources/nbg_csv.py` is the only place that knows how NBG lays out its export, so a `sources/nbg_api.py` returning the same `Transaction` objects would slot in beside it without any changes to `ynab.py`, `model.py`, or the code that builds the YNAB payload.
-
-Two things to get right if you build it:
-
-- **Dates**: use `bookingDateTime` for `Transaction.date` and fall back to `valueDateTime`. That matches the CSV source, which prefers the posting date because it's the order the bank lists transactions in, which in turn is what makes the approval queue easy to work through.
-- **IDs**: use `TransactionReference` on its own for `source_id`, and set `cleared` from the booked/pending status. Over the API every entry has its own reference, which isn't true of the CSV (see below), so a transaction moving from pending to booked stays recognisable as the same transaction even if its date, payee, or amount changed along the way. Keep it that way: don't let anything the bank might later revise end up in `source_id`.
-
 ---
 
 Not affiliated, associated, or in any way officially connected with YNAB or any of its subsidiaries or affiliates. The official YNAB website can be found at <https://www.ynab.com>.
