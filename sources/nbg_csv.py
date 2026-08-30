@@ -1,7 +1,8 @@
 """Source: NBG's account statement export.
 
-The export is XLSX; convert to CSV first (LibreOffice:
-`soffice --headless --convert-to csv statement.xlsx`).
+The export is XLSX with two sheets, `data` then `info`; convert the first to CSV
+before parsing (LibreOffice: `soffice --headless --convert-to csv
+statement.xlsx`, which converts the first sheet only).
 
 Only cleared transactions appear in this export -- the bank does not publish
 pending items here. That is the one real limitation of the CSV route, and the

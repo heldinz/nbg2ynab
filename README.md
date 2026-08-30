@@ -72,13 +72,15 @@ Run the following process to catch up on your YNAB transactions for the first ti
 
 NBG gives you your transaction list as an XLSX file. Download one covering the period you want to catch up on.
 
-This tool reads CSV rather than XLSX, so the file needs converting. Any spreadsheet app will do it from "Save As" or "Export", and if you have LibreOffice you can do it in the terminal:
+This tool reads CSV rather than XLSX, so the file needs converting. The download has two sheets, `data` then `info`, and only `data` matters here. Delete `info` before you convert: once you have only the `data` sheet left, do "Save As" or "Export" in any spreadsheet app and choose the CSV format to convert it to a single CSV file.
+
+LibreOffice can do the same from the terminal, and needs no `info` tab deletion because it only ever converts the first sheet:
 
 ```sh
 soffice --headless --convert-to csv statement.xlsx
 ```
 
-The export's encoding varies, so it's detected automatically (`utf-8-sig`, then `cp1253`, then `iso-8859-7`). If the Greek text comes out as mojibake, force it with `--encoding`.
+The export's encoding varies, so it's detected automatically (`utf-8-sig`, then `cp1253`, then `iso-8859-7`). If the Greek payees and descriptions come out as garbled Latin characters, the detection picked wrong: force the right one with `--encoding`.
 
 ### Set custom payee names
 
