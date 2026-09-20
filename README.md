@@ -179,9 +179,11 @@ check [options]                report on import health and orphans
 
 The whole approach depends on `source_id` coming out the same for a given transaction every time you export it. If it changes, YNAB sees a transaction it doesn't recognise and creates a duplicate instead of skipping it.
 
-For the CSV, `source_id` is the bank's reference number combined with the description and the order amount. The reference on its own isn't enough: NBG gives a fee the same reference number as the transaction that incurred it, so keying on the reference alone would make every fee look like a duplicate of its parent and quietly drop it. (On the rare row with no reference number at all, the dates, amount and description are used instead.)
+For the CSV, `source_id` is the bank's reference number combined with the description and the order amount. The reference on its own isn't enough: NBG gives a fee the same reference number as the transaction that incurred it, so keying on the reference alone would make every fee look like a duplicate of its parent and silently drop it.
 
-The trade-off is that the description and the amount now matter too. If NBG restates either one for a transaction you've already imported, or renumbers its references, you'll get a duplicate rather than a no-op. In practice the export has been stable once a transaction clears, but if something looks wrong, this is the first thing to check.
+Most rows have no reference number at all, and fall back to the posting date, the value date, the amount and the description. This is the normal path, not an edge case: NBG only issues a reference for transfers, payments and remittances, so every card transaction lands on the fallback.
+
+The fallback's weak spot is a repeat purchase: two transactions at the same merchant, on the same day, for the same amount share an ID, and YNAB drops the second as a duplicate. No other column fixes this. The `Time` column is a settlement batch timestamp rather than the purchase time, so transactions that settle at the same time share a timestamp. If this ever becomes a real problem, the field to add is the ledger balance, which is a running total and so differs even between two otherwise identical purchases.
 
 There are two safeguards. `push` warns you when two rows in the same file end up with the same ID, and `check` will show the counts drifting if imports stop landing where you expect. It's worth running `check` after your first few imports, before you start trusting the process.
 

@@ -15,8 +15,7 @@ from decimal import Decimal, ROUND_HALF_UP
 
 # YNAB caps import_id at 36 characters.
 IMPORT_ID_MAX = 36
-# YNAB truncates beyond these; we do it ourselves so the value we send is the
-# value that lands, which keeps re-runs byte-identical.
+# YNAB truncates beyond these; we do it ourselves so the value is guaranteed
 PAYEE_MAX = 50
 MEMO_MAX = 200
 
@@ -29,12 +28,10 @@ class Transaction:
 
     Attributes:
         source_id:  Stable identifier from the source system. MUST be stable
-                    across exports for the same underlying transaction --
-                    everything downstream depends on this.
+                    across exports for the same underlying transaction.
         date:       The date to show in YNAB. For NBG this is the posting
-                    date (`Ημερομηνία`), falling back to `Valeur` -- it
-                    matches the order the bank lists transactions in, which
-                    is what you want when reconciling against a statement.
+                    date (`Date`), falling back to `Valeur`. It matches the
+                    order the bank lists transactions in.
         amount:     Signed, in currency units. Negative = outflow.
         payee:      Counterparty name, or a fallback description.
         memo:       Free text; useful for keeping the raw bank description.
@@ -65,7 +62,7 @@ class Transaction:
 
         It also makes YNAB attempt to match this against an existing
         user-entered transaction on the same account with the same amount and
-        a date within +/-10 days -- which is how manually entered transactions
+        a date within +/-10 days; this is how manually entered transactions
         get merged rather than duplicated.
 
         Derived purely from source_id: a hash keeps us inside the 36-char
@@ -107,9 +104,9 @@ def _clip(value: str | None, limit: int) -> str | None:
 
 
 def parse_greek_decimal(raw: str) -> Decimal:
-    """Parse NBG's number format: comma decimal, optional dot thousands.
+    """Parse an NBG amount, whichever separator convention it arrives in.
 
-    Handles '1.234,56', '-45,20', '(45,20)', '45.20' and '1234'.
+    Handles '1.234,56', '-45,20', '(45,20)', '45.20', '1234.56' and '1234'.
     """
     if raw is None:
         raise ValueError("empty amount")
@@ -127,12 +124,14 @@ def parse_greek_decimal(raw: str) -> Decimal:
 
     text = text.replace("€", "").strip()
 
-    if "," in text:
-        # Comma is the decimal separator; dots are thousands separators.
-        text = text.replace(".", "").replace(",", ".")
-    # If there is no comma we leave dots alone: a lone '45.20' is already
-    # decimal, and '1.234' with no decimal part is vanishingly rare in an
-    # export that always writes two decimal places.
+    # Separator type cannot be guaranteed so we check by position
+    if "," in text and "." in text:
+        if text.rfind(",") > text.rfind("."):
+            text = text.replace(".", "").replace(",", ".")
+        else:
+            text = text.replace(",", "")
+    elif "," in text:
+        text = text.replace(",", ".")
 
     value = Decimal(text)
     return -value if negative else value

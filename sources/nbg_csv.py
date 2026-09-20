@@ -19,19 +19,22 @@ from typing import Iterator
 
 from ..model import Transaction, derive_fallback_id, parse_greek_decimal
 
-# Column names as they appear in the export.
-COL_SERIAL = "Α/Α Συναλλαγής"
-COL_POSTED = "Ημερομηνία"
+# Column names as they appear in the export. NBG renamed these from Greek to
+# English in September 2026. Only the header row changed: the values are still
+# Greek (Χ/Π direction markers, Greek payee names), and the amount and date
+# formats were unaffected.
+COL_SERIAL = "Transaction No."
+COL_POSTED = "Date"
 COL_VALEUR = "Valeur"
-COL_TYPE = "Είδος εργασίας"
-COL_TXN_AMOUNT = "Ποσό συναλλαγής"
-COL_ORDER_AMOUNT = "Ποσό εντολής"
-COL_DR_CR = "Χρέωση / Πίστωση"
-COL_DESCRIPTION = "Περιγραφή"
-COL_COUNTERPARTY = "Ονοματεπώνυμο αντισυμβαλλόμενου"
-COL_EXTRA = "Επιπρόσθετες πληροφορίες"
-COL_REFERENCE = "Αριθμός αναφοράς"
-COL_MERCHANT = "Κωδικός εμπόρου/οργανισμού"
+COL_TYPE = "Transaction type"
+COL_TXN_AMOUNT = "Transaction amount"
+COL_ORDER_AMOUNT = "Order amount"
+COL_DR_CR = "Debit / Credit"
+COL_DESCRIPTION = "Description"
+COL_COUNTERPARTY = "Counterparty name"
+COL_EXTRA = "Additional information"
+COL_REFERENCE = "Reference number"
+COL_MERCHANT = "Merchant / Organization code"
 
 COLUMN_DATE_FORMATS = {
     COL_VALEUR: "%m/%d/%y",
@@ -39,7 +42,9 @@ COLUMN_DATE_FORMATS = {
 }
 ENCODINGS = ("utf-8-sig", "cp1253", "iso-8859-7")
 
-# Values of Χρέωση / Πίστωση that mean money left the account.
+# Values of Debit / Credit that mean money left the account. The export emits
+# the Greek markers (Χ/Π) even under the English column names; the Latin ones
+# are kept as a hedge in case the values get localised too.
 DEBIT_MARKERS = {"Χ", "ΧΡΕΩΣΗ", "D", "DR", "DEBIT"}
 
 
@@ -118,7 +123,7 @@ def _date(row: dict[str, str]) -> date:
             return datetime.strptime(raw, fmt).date()
         except ValueError:
             continue
-    raise ValueError("no usable date in Valeur or Ημερομηνία")
+    raise ValueError(f"no usable date in {COL_VALEUR} or {COL_POSTED}")
 
 
 def _amount(row: dict[str, str]) -> Decimal:
@@ -127,7 +132,7 @@ def _amount(row: dict[str, str]) -> Decimal:
     if not raw:
         raw = (row.get(COL_TXN_AMOUNT) or "").strip()
     if not raw:
-        raise ValueError("no amount in Ποσό εντολής or Ποσό συναλλαγής")
+        raise ValueError(f"no amount in {COL_ORDER_AMOUNT} or {COL_TXN_AMOUNT}")
 
     amount = parse_greek_decimal(raw)
 
