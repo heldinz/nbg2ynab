@@ -31,6 +31,7 @@ COL_TXN_AMOUNT = "Transaction amount"
 COL_ORDER_AMOUNT = "Order amount"
 COL_DR_CR = "Debit / Credit"
 COL_DESCRIPTION = "Description"
+COL_BALANCE = "Ledger balance"
 COL_COUNTERPARTY = "Counterparty name"
 COL_EXTRA = "Additional information"
 COL_REFERENCE = "Reference number"
@@ -105,6 +106,8 @@ def _source_id(row: dict[str, str]) -> str:
         row.get(COL_VALEUR, ""),
         amt,
         desc,
+        # Running total: tells apart identical purchases on the same day.
+        row.get(COL_BALANCE, ""),
     )
 
 

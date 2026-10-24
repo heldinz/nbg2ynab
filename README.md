@@ -181,9 +181,9 @@ The whole approach depends on `source_id` coming out the same for a given transa
 
 For the CSV, `source_id` is the bank's reference number combined with the description and the order amount. The reference on its own isn't enough: NBG gives a fee the same reference number as the transaction that incurred it, so keying on the reference alone would make every fee look like a duplicate of its parent and silently drop it.
 
-Most rows have no reference number at all, and fall back to the posting date, the value date, the amount and the description. This is the normal path, not an edge case: NBG only issues a reference for transfers, payments and remittances, so every card transaction lands on the fallback.
+Most rows have no reference number at all, and fall back to the posting date, the value date, the amount, the description and the ledger balance. This is the normal path, not an edge case: NBG only issues a reference for transfers, payments and remittances, so every card transaction lands on the fallback.
 
-The fallback's weak spot is a repeat purchase: two transactions at the same merchant, on the same day, for the same amount share an ID, and YNAB drops the second as a duplicate. No other column fixes this. The `Time` column is a settlement batch timestamp rather than the purchase time, so transactions that settle at the same time share a timestamp. If this ever becomes a real problem, the field to add is the ledger balance, which is a running total and so differs even between two otherwise identical purchases.
+The ledger balance is a running total, so it tells apart two otherwise identical purchases on the same day. The cost is that it changed the ID scheme: transactions pushed before the balance was added get a different `import_id` if they appear in a later export, so always use `--since` to start after your last import.
 
 There are two safeguards. `push` warns you when two rows in the same file end up with the same ID, and `check` will show the counts drifting if imports stop landing where you expect. It's worth running `check` after your first few imports, before you start trusting the process.
 

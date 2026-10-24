@@ -131,6 +131,19 @@ class TestCsvSource(unittest.TestCase):
         txn = nbg_csv.read(write_csv(self.tmp, row))[0]
         self.assertEqual(txn.date, date(2026, 6, 23))
 
+    def test_repeat_purchases_get_distinct_ids(self):
+        # Same day, merchant and amount, no reference: only the ledger
+        # balance differs.
+        row = (
+            "%d,14/10/2026,02:45,10/12/26,101,Κάρτες,Αγορά,-12.4,-12.4,"
+            "EUR,Χ,,Riverty Bank SABVG,%s,ACCOUNT HOLDER,,,,,,POS,,,,,"
+            "14/10/2026,02:45,****1234,,"
+        )
+        txns = nbg_csv.read(
+            write_csv(self.tmp, row % (1, "96171.35"), row % (2, "96220.35"))
+        )
+        self.assertNotEqual(txns[0].source_id, txns[1].source_id)
+
     def test_unsigned_amount_uses_debit_credit_column(self):
         row = (
             '1,27/06/2026,11:40,6/26/26,101,Κάρτες,Αγορά,7.80,7.80,'
